@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MotionLite Studio</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root { --bg:#0f0f13;--panel:#1a1a22;--panel-2:#22222e;--border:#2e2e3e;--ink:#e8e8f0;--ink-dim:#8888a0;--ink-faint:#55556a;--success:#2d8a4e;--error:#c0392b;--warn:#d4a017;--info:#4a6cf7;--accent:#00b8a9;--accent-2:#4a6cf7;--radius:12px; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding:1rem .8rem 8rem;font-size:15px;line-height:1.5;max-width:800px;margin:0 auto; }
+header { margin-bottom:1.2rem;text-align:center; }
+h1 { font-size:1.5rem;font-weight:700;letter-spacing:-.03em;margin-bottom:.2rem;background:linear-gradient(135deg,var(--accent),var(--accent-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+.subtitle { font-size:.8rem;color:var(--ink-dim); }
+.toast { position:fixed;top:1rem;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--panel);color:var(--ink);padding:.85rem 1.4rem;border-radius:10px;font-size:.85rem;font-weight:500;box-shadow:0 4px 30px rgba(0,0,0,.5);border:1px solid var(--border);z-index:1000;opacity:0;transition:transform .35s ease,opacity .35s ease;max-width:90vw;display:flex;align-items:center;gap:.5rem; }
+.toast.visible { transform:translateX(-50%) translateY(0);opacity:1; }
+.toast.success { border-color:var(--success); } .toast.error { border-color:var(--error); } .toast.warn { border-color:var(--warn); }
+.section { background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:.8rem;overflow:hidden; }
+.section-header { padding:.85rem 1rem;cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center; }
+.section-header:active { background:var(--panel-2); }
+.section-title { font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-dim);font-weight:700;display:flex;align-items:center;gap:.4rem; }
+.section-title .badge { display:inline-block;padding:.1rem .5rem;background:var(--accent);color:#fff;border-radius:10px;font-size:.62rem;letter-spacing:0; }
+.section-title .badge.soft { background:var(--info); } .section-title .badge.count { background:var(--success); }
+.section-header .chevron { font-size:.7rem;color:var(--ink-faint);transition:transform .2s; }
+.section.open .section-header .chevron { transform:rotate(180deg); }
+.section-body { max-height:0;overflow:hidden;transition:max-height .4s ease; }
+.section.open .section-body { max-height:10000px; }
+.section-content { padding:0 1rem 1rem; }
+.resume-banner { background:linear-gradient(135deg,rgba(0,184,169,.15),rgba(74,108,247,.1));border:2px solid var(--accent);border-radius:var(--radius);padding:1rem 1.1rem;margin-bottom:1rem;display:flex;flex-direction:column;gap:.7rem; }
+.resume-banner .rb-title { font-size:.95rem;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:.5rem; }
+.resume-banner .rb-info { font-size:.78rem;color:var(--ink-dim);line-height:1.45; }
+.resume-banner .rb-info strong { color:var(--ink); }
+.resume-actions { display:flex;gap:.5rem;flex-wrap:wrap; }
+.resume-actions button { flex:1;min-width:120px;padding:.75rem .9rem;border-radius:8px;border:none;font-family:inherit;font-size:.85rem;font-weight:700;cursor:pointer; }
+.btn-resume { background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;box-shadow:0 4px 16px rgba(0,184,169,.3); }
+.btn-discard { background:transparent;border:2px solid var(--error)!important;color:var(--error); }
+.api-panel { background:var(--panel);border:2px solid var(--border);border-radius:var(--radius);padding:1rem 1.1rem;margin-bottom:.8rem; }
+.api-panel.ok { border-color:var(--success); }
+.api-key-input { width:100%;padding:.95rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-family:ui-monospace,monospace;font-size:.88rem;margin-bottom:.6rem; }
+.api-key-input:focus { outline:none;border-color:var(--accent); }
+.api-save-btn { width:100%;padding:.9rem 1.2rem;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:.95rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:.6rem; }
+.api-status-line { font-size:.78rem;padding:.6rem .85rem;border-radius:6px;display:flex;align-items:center;gap:.5rem;background:var(--panel-2);color:var(--ink-dim); }
+.api-status-line.ok { background:#1a2e1a;color:var(--success); }
+.status-dot { width:8px;height:8px;border-radius:50%;background:var(--ink-faint);flex-shrink:0; }
+.api-status-line.ok .status-dot { background:var(--success); }
+.api-hint { font-size:.72rem;color:var(--ink-dim);margin-top:.4rem; }
+.api-hint a { color:var(--accent);text-decoration:underline; }
+.stat-line { font-size:.72rem;color:var(--ink-dim);margin-top:.5rem;padding:.4rem .6rem;background:var(--panel-2);border-radius:6px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.3rem;font-family:ui-monospace,monospace; }
+.wake-status { font-size:.72rem;padding:.5rem .7rem;border-radius:6px;margin-top:.4rem;display:flex;justify-content:space-between;align-items:center;background:#eef4ff15;color:var(--info);flex-wrap:wrap;gap:.4rem;border:1px solid #4a6cf740; }
+.wake-status.active { background:#e3f5e915;color:var(--success);border-color:#2d8a4e40; }
+.wake-status.warn { background:#fdf5e315;color:var(--warn);border-color:#d4a01740; }
+.wake-status button { background:transparent;border:1px solid currentColor;color:inherit;padding:.25rem .6rem;border-radius:6px;font-size:.68rem;cursor:pointer;font-family:inherit; }
+.upload-zone { border:3px dashed var(--border);border-radius:var(--radius);padding:2rem 1rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:var(--panel); }
+.upload-zone:active { border-color:var(--accent);background:var(--panel-2); }
+.upload-zone.loading { pointer-events:none;opacity:.6; }
+.upload-zone input[type="file"] { display:none; }
+.upload-icon { font-size:3rem;margin-bottom:.5rem;opacity:.7; }
+.upload-text { font-size:1.05rem;color:var(--ink);margin-bottom:.3rem;font-weight:700; }
+.upload-hint { font-size:.8rem;color:var(--ink-dim); }
+.sort-toolbar { display:flex;gap:.4rem;margin-bottom:.8rem;flex-wrap:wrap; }
+.sort-toolbar button { flex:1;min-width:90px;padding:.6rem .5rem;border-radius:8px;border:1px solid var(--border);background:var(--panel-2);color:var(--ink-dim);font-size:.7rem;cursor:pointer;font-family:inherit;font-weight:600; }
+.sort-toolbar button.active { background:var(--accent);color:#fff;border-color:var(--accent); }
+.images-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.5rem; }
+.image-card { position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:#000;cursor:grab; }
+.image-card.dragging { opacity:.4; }
+.image-card.drag-over { border-color:var(--accent);border-width:2px; }
+.image-card img { width:100%;height:auto;display:block; }
+.image-card .order-badge { position:absolute;top:4px;left:4px;background:rgba(0,184,169,.95);color:#fff;padding:.15rem .5rem;border-radius:20px;font-size:.7rem;font-weight:700;font-family:ui-monospace,monospace; }
+.image-card .dim-badge { position:absolute;top:4px;right:26px;background:rgba(74,108,247,.95);color:#fff;padding:.15rem .45rem;border-radius:20px;font-size:.6rem;font-weight:700;font-family:ui-monospace,monospace; }
+.image-card .name-label { position:absolute;bottom:0;left:0;right:0;padding:.25rem .4rem;background:linear-gradient(transparent,rgba(0,0,0,.85));font-size:.6rem;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,monospace; }
+.image-card .remove-btn { position:absolute;top:4px;right:4px;background:rgba(192,57,43,.9);color:#fff;border:none;width:22px;height:22px;border-radius:50%;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit; }
+.control-row { margin-bottom:.8rem; }
+.control-label { display:block;font-size:.72rem;color:var(--ink-dim);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700; }
+.control-hint { font-size:.68rem;color:var(--ink-faint);margin-top:.3rem;font-style:italic;line-height:1.4; }
+select,textarea { width:100%;padding:.8rem .9rem;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-family:inherit;font-size:.9rem; }
+select { -webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%238888a0' d='M0 0l5 6 5-6z'/></svg>");background-repeat:no-repeat;background-position:right .9rem center;background-size:10px; }
+select:focus,textarea:focus { outline:none;border-color:var(--accent); }
+textarea { min-height:90px;resize:vertical;line-height:1.5; }
+.intensity-list { display:flex;flex-direction:column;gap:.35rem; }
+.intensity-item { display:flex;align-items:center;gap:.8rem;padding:.7rem .9rem;border-radius:10px;border:2px solid var(--border);background:var(--panel-2);cursor:pointer;transition:all .15s;user-select:none; }
+.intensity-item:active { transform:scale(.99); }
+.intensity-item.active { border-color:var(--accent);background:linear-gradient(90deg,rgba(0,184,169,.15),rgba(74,108,247,.08));box-shadow:0 4px 14px rgba(0,184,169,.2); }
+.intensity-item .int-emoji { font-size:1.6rem;width:2rem;text-align:center;flex-shrink:0; }
+.intensity-item .int-info { flex:1;min-width:0; }
+.intensity-item .int-label { font-size:.85rem;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:.4rem; }
+.intensity-item.active .int-label { color:var(--accent); }
+.intensity-item .int-sub { font-size:.7rem;color:var(--ink-dim);margin-top:.1rem;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.intensity-item .int-rec { font-size:.55rem;padding:.1rem .4rem;border-radius:20px;background:var(--warn);color:#000;font-weight:800;letter-spacing:.05em;text-transform:uppercase; }
+.intensity-item .int-check { font-size:1.2rem;color:var(--accent);opacity:0;flex-shrink:0;transition:opacity .2s; }
+.intensity-item.active .int-check { opacity:1; }
+.intensity-hint { font-size:.72rem;color:var(--ink-dim);padding:.6rem .8rem;background:var(--panel-2);border-radius:8px;border-left:3px solid var(--accent);line-height:1.45;margin-top:.6rem; }
+.intensity-hint strong { color:var(--accent); }
+.motion-presets { display:flex;flex-wrap:wrap;gap:.4rem; }
+.motion-preset { padding:.55rem .9rem;border-radius:20px;border:1px solid var(--border);background:var(--panel-2);font-size:.75rem;cursor:pointer;user-select:none;color:var(--ink-dim);font-weight:600; }
+.motion-preset.selected { background:var(--accent);color:#fff;border-color:var(--accent); }
+.btn-primary { width:100%;padding:1.3rem 1rem;border-radius:var(--radius);border:none;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-size:1.1rem;font-weight:800;font-family:inherit;cursor:pointer;transition:opacity .2s,transform .1s;margin-bottom:.8rem;letter-spacing:.02em;box-shadow:0 6px 24px rgba(0,184,169,.35); }
+.btn-primary:active:not(:disabled) { transform:scale(.98); }
+.btn-primary:disabled { opacity:.3;cursor:not-allowed;box-shadow:none; }
+.btn-stop { width:100%;padding:.9rem;border-radius:var(--radius);border:2px solid var(--error);background:transparent;color:var(--error);font-size:.9rem;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:.8rem;display:none; }
+.btn-stop.visible { display:block; }
+.queue { margin-top:1rem; }
+.queue-summary { background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:.7rem .9rem;margin-bottom:.6rem;font-size:.8rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem;font-family:ui-monospace,monospace; }
+.queue-summary .progress-text { color:var(--accent);font-weight:700; }
+.queue-summary .eta-text { color:var(--ink-dim); }
+.queue-item { display:flex;align-items:center;gap:.7rem;padding:.65rem .8rem;border-radius:8px;border:1px solid var(--border);margin-bottom:.35rem;background:var(--panel);font-size:.8rem; }
+.queue-item.pending { opacity:.45; } .queue-item.creating { border-color:var(--warn); } .queue-item.processing { border-color:var(--accent); } .queue-item.done { border-color:var(--success); } .queue-item.failed { border-color:var(--error); }
+.queue-item .q-icon { font-size:1rem;width:1.5rem;text-align:center;flex-shrink:0; }
+.queue-item .q-name { flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.queue-item .q-res { font-size:.62rem;color:var(--info);font-family:ui-monospace,monospace;flex-shrink:0; }
+.queue-item .q-status { font-size:.7rem;color:var(--ink-dim);text-align:right;flex-shrink:0;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,monospace; }
+.gallery { margin-top:1.2rem; }
+.gallery-title { font-size:.85rem;text-transform:uppercase;letter-spacing:.15em;color:var(--ink-dim);margin-bottom:.8rem;font-weight:700;text-align:center; }
+.gallery-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.7rem; }
+.gallery-item { border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);background:#000; }
+.gallery-item video { width:100%;display:block;object-fit:contain;background:#000; }
+.gallery-item .g-caption { padding:.5rem .6rem;background:var(--panel);font-size:.68rem;color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center;gap:.3rem;flex-wrap:wrap; }
+.gallery-item .g-caption strong { color:var(--accent);font-family:ui-monospace,monospace; }
+.gallery-item .g-caption .g-res { color:var(--info);font-family:ui-monospace,monospace;font-size:.6rem; }
+.gallery-item .g-caption a { color:var(--accent-2);text-decoration:none;font-size:.65rem;padding:.15rem .5rem;border:1px solid var(--accent-2);border-radius:4px; }
+.console-panel { background:#0a0a0e;border:1px solid var(--border);border-radius:var(--radius);padding:.7rem .9rem;max-height:220px;overflow-y:auto;font-family:ui-monospace,monospace;font-size:.7rem;line-height:1.55; }
+.console-panel .log-line { padding:.1rem 0; }
+.console-panel .log-time { color:var(--ink-faint);margin-right:.4rem; }
+.console-panel .log-info { color:var(--info); } .console-panel .log-success { color:var(--success); } .console-panel .log-error { color:var(--error); } .console-panel .log-warn { color:var(--warn); }
+.console-panel .log-text { color:var(--ink); }
+.status-bar { position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--border);color:var(--ink);padding:.8rem 1rem;font-size:.78rem;display:flex;align-items:center;gap:.6rem;transform:translateY(100%);transition:transform .3s;z-index:100;font-family:ui-monospace,monospace; }
+.status-bar.visible { transform:translateY(0); }
+.spinner { width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.hidden { display:none !important; }
+.empty-state { text-align:center;padding:1.5rem 1rem;color:var(--ink-faint);font-size:.82rem;border:1px dashed var(--border);border-radius:var(--radius); }
+.empty-state .big { font-size:2.2rem;opacity:.4;margin-bottom:.4rem; }
+#noSleepCanvas { position:fixed;top:0;left:0;width:1px;height:1px;opacity:.01;pointer-events:none;z-index:-1; }
+#noSleepVideo { position:fixed;top:0;left:0;width:1px;height:1px;opacity:.01;pointer-events:none;z-index:-1; }
+@media (max-width:480px) { h1 { font-size:1.3rem; } .images-grid { grid-template-columns:repeat(auto-fill,minmax(85px,1fr)); } .gallery-grid { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); } }
+</style>
+</head>
+<body>
+<header><h1>MotionLite Studio</h1><p class="subtitle">Vos images prennent vie — qualité max, format respecté</p></header>
+
+<div class="resume-banner" id="resume-banner" style="display:none;">
+<div class="rb-title">💾 <span id="rb-title-text">Sauvegarde trouvée</span></div>
+<div class="rb-info" id="rb-info-text">Chargement…</div>
+<div class="resume-actions">
+<button type="button" class="btn-resume" id="resume-btn">▶ Reprendre</button>
+<button type="button" class="btn-discard" id="discard-btn">✕ Tout effacer</button>
+</div>
+</div>
+
+<div class="api-panel" id="api-panel">
+<input type="password" class="api-key-input" id="api-key-input" placeholder="Collez votre clé API ici (sk-...)" autocomplete="off" spellcheck="false">
+<button type="button" class="api-save-btn" id="api-save-btn">✓ Enregistrer ma clé</button>
+<div class="api-status-line" id="api-status-line"><span class="status-dot"></span><span id="api-status-text">Aucune clé API enregistrée</span></div>
+<div class="api-hint">Clé gratuite sur <a href="https://platform.agnes-ai.com" target="_blank">platform.agnes-ai.com</a> → Settings → API Keys</div>
+<div class="stat-line"><span>📊 Vitesse : <span id="stat-speed">en attente</span></span><span id="stat-samples">0 génération</span></div>
+<div class="wake-status" id="wake-status"><span id="wake-status-text">💤 Veille auto</span><button type="button" id="wake-toggle-btn">Garder l'écran allumé</button></div>
+</div>
+
+<div class="upload-zone" id="upload-zone">
+<input type="file" id="file-input" accept="image/*" multiple>
+<div class="upload-icon">📸</div>
+<div class="upload-text">Appuyez pour choisir vos images</div>
+<div class="upload-hint">Le format de chaque image sera respecté automatiquement</div>
+</div>
+
+<div class="section open" id="section-images" style="margin-top:.8rem;">
+<div class="section-header" data-toggle="section-images"><span class="section-title">🖼️ Vos images <span class="badge count" id="images-count">0</span></span><span class="chevron">▼</span></div>
+<div class="section-body"><div class="section-content">
+<div class="sort-toolbar" id="sort-toolbar">
+<button type="button" data-sort="natural" class="active">↕ 01, 02, 03…</button>
+<button type="button" data-sort="alpha">A→Z</button>
+<button type="button" data-sort="reverse">Z→A</button>
+<button type="button" id="clear-all-btn">✕ Vider</button>
+</div>
+<div class="images-grid" id="images-grid"><div class="empty-state" style="grid-column:1/-1;"><div class="big">🖼️</div><div>Aucune image pour l'instant</div></div></div>
+</div></div>
+</div>
+
+<div class="section open" id="section-resolution">
+<div class="section-header" data-toggle="section-resolution"><span class="section-title">🎬 Qualité de sortie <span class="badge">résolution</span></span><span class="chevron">▼</span></div>
+<div class="section-body"><div class="section-content">
+<div class="control-row">
+<label class="control-label">Résolution des vidéos</label>
+<select id="resolution-select">
+<option value="720p">720p — Rapide (1280×720 équivalent)</option>
+<option value="1080p" selected>1080p — HD (1920×1080 équivalent)</option>
+<option value="2k">2K — Très haute qualité (~2560×1440 équivalent)</option>
+<option value="4k">4K — Ultra HD (3840×2160 équivalent)</option>
+</select>
+<div class="control-hint">⚠️ Plus la résolution est haute, plus la génération est lente. La 4K peut être refusée par Agnes si le quota est atteint.</div>
+</div>
+<div class="control-row" style="margin-bottom:0;">
+<label class="control-label">Format de sortie</label>
+<select id="format-select">
+<option value="auto" selected>🔄 Auto (identique à chaque image source)</option>
+<option value="portrait">📱 Portrait 9:16 (force vertical)</option>
+<option value="landscape">🖥️ Paysage 16:9 (force horizontal)</option>
+<option value="square">⬛ Carré 1:1</option>
+</select>
+<div class="control-hint">En mode "Auto", chaque vidéo aura EXACTEMENT les proportions de son image source (16:9, 4:3, 9:16, carré…).</div>
+</div>
+</div></div>
+</div>
+
+<div class="section open" id="section-intensity">
+<div class="section-header" data-toggle="section-intensity"><span class="section-title">🎚️ Intensité <span class="badge">10 niveaux</span></span><span class="chevron">▼</span></div>
+<div class="section-body"><div class="section-content">
+<div class="intensity-list" id="intensity-list"></div>
+<div class="intensity-hint" id="intensity-hint"><span><strong>Modérée</strong> : mouvement clairement visible mais naturel.</span></div>
+</div></div>
+</div>
+
+<div class="section open" id="section-motion-type">
+<div class="section-header" data-toggle="section-motion-type"><span class="section-title">🎞️ Type d'animation</span><span class="chevron">▼</span></div>
+<div class="section-body"><div class="section-content">
+<div class="motion-presets" id="motion-presets">
+<div class="motion-preset selected" data-motion="breathing">🫁 Respiration</div>
+<div class="motion-preset" data-motion="blink">👁️ Clignement</div>
+<div class="motion-preset" data-motion="hair">🌬️ Vent</div>
+<div class="motion-preset" data-motion="light">✨ Lumière</div>
+<div class="motion-preset" data-motion="full">🌸 Tout</div>
+<div class="motion-preset" data-motion="custom">✏️ Libre</div>
+</div>
+<div class="control-row" style="margin-top:1rem;margin-bottom:0;">
+<label class="control-label">Instruction libre (optionnel)</label>
+<textarea id="motion-prompt" placeholder="Ex : Fais doucement respirer le personnage."></textarea>
+</div>
+</div></div>
+</div>
+
+<div class="section" id="section-tech">
+<div class="section-header" data-toggle="section-tech"><span class="section-title">⚙️ Réglages avancés</span><span class="chevron">▼</span></div>
+<div class="section-body"><div class="section-content">
+<div class="control-row"><label class="control-label">Durée</label>
+<select id="duration-select"><option value="121">5 secondes</option><option value="153" selected>6,4 secondes (recommandé)</option><option value="241">10 secondes</option></select></div>
+<div class="control-row" style="margin-bottom:0;"><label class="control-label">Verrouillage</label>
+<select id="lock-select"><option value="strict" selected>🔒 Strict</option><option value="soft">🔓 Souple</option></select></div>
+</div></div>
+</div>
+
+<button type="button" class="btn-primary" id="generate-btn" disabled>Ajoutez votre clé API</button>
+<button type="button" class="btn-stop" id="stop-btn">⏹ Arrêter</button>
+<div class="queue" id="queue" style="display:none;"></div>
+<div class="gallery" id="gallery" style="display:none;"><div class="gallery-title">🎬 Vos vidéos</div><div class="gallery-grid" id="gallery-grid"></div></div>
+
+<div class="section" id="section-console" style="margin-top:1.5rem;">
+<div class="section-header" data-toggle="section-console"><span class="section-title">🖥️ Journal</span><span class="chevron">▼</span></div>
+<div class="section-body"><div class="section-content">
+<div class="console-panel" id="console-panel"><div class="log-line"><span class="log-time">--:--:--</span><span class="log-info">[Système]</span> <span class="log-text">Prêt.</span></div></div>
+</div></div>
+</div>
+
+<div class="status-bar" id="status-bar"><div class="spinner"></div><span id="status-text">Préparation…</span></div>
+<div class="toast" id="toast"><span class="toast-icon" id="toast-icon">✓</span><span id="toast-text">Message</span></div>
+<canvas id="noSleepCanvas" width="2" height="2"></canvas>
+<video id="noSleepVideo" playsinline muted loop></video>
+
+<script>
+const API_BASE='https://apihub.agnes-ai.com/v1';const POLL_BASE='https://apihub.agnes-ai.com/agnesapi';const MODEL_VIDEO='agnes-video-v2.0';const FRAME_RATE=24;
+const CREATE_INTERVAL_MIN=62000;const CREATE_INTERVAL_MAX=90000;const CREATE_INTERVAL_SAFE=75000;let createIntervalMs=CREATE_INTERVAL_MIN;
+const POLL_INTERVAL_SEC=8;const MAX_POLL_ATTEMPTS=100;const TIMING_CACHE_KEY='motionlite_timing_v4';const API_KEY_STORAGE='agnes_api_key';const WAKE_LOCK_PREF='agnes_wakelock_enabled_motionlite';const MAX_IMAGE_SIZE=12*1024*1024;const THUMBNAIL_MAX_WIDTH=200;
+const DB_NAME='motionlite_db_v1';
+
+// ═══════════════════════════════════════════════════════════════════
+// RÉSOLUTIONS CIBLES
